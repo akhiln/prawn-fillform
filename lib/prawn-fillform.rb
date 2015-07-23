@@ -199,13 +199,15 @@ module Prawn
             dictionary = deref(ref)
 
             next unless deref(dictionary[:Type]) == :Annot and deref(dictionary[:Subtype]) == :Widget
-            next unless (deref(dictionary[:FT]) == :Tx || deref(dictionary[:FT]) == :Btn)
+            next unless (deref(dictionary[:FT]) == :Sig || deref(dictionary[:FT]) == :Tx || deref(dictionary[:FT]) == :Btn)
 
             type = deref(dictionary[:FT]).to_sym
             case type
             when :Tx
               acroform[page_number] << Text.new(dictionary)
             when :Btn
+              acroform[page_number] << Button.new(dictionary)
+            when :Sig
               acroform[page_number] << Button.new(dictionary)
             end
           end
@@ -244,14 +246,19 @@ module Prawn
             elsif field.type == :button
 
               bounding_box([field.x + x_offset, field.y + y_offset], :width => field.width, :height => field.height) do
-                if value =~ /http/
-                  image open(value), :position => options[:position] || :center,
-                                  :vposition => options[:vposition] || :center,
-                                  :fit => options[:fit] || [field.width, field.height]
+                image_options = {
+                  :position => options[:position] || :center,
+                  :vposition => options[:vposition] || :center,
+                }
+                if options[:fill]
+                  image_options[:fit] = [field.width, field.height]
                 else
-                  image value, :position => options[:position] || :center,
-                                  :vposition => options[:vposition] || :center,
-                                  :fit => options[:fit] || [field.width, field.height]
+                  image_options[:height] = field.height
+                end
+                if value =~ /http/
+                  image open(value), image_options
+                else
+                  image value, image_options
                 end
 
               end
